@@ -1,0 +1,42 @@
+# Fetches live Fuel Finder data every 30 minutes and publishes it to GitHub Pages
+# as stations.json, which the app downloads. The API secret stays in GitHub, never in the app.
+#
+# Setup: repo Settings > Secrets and variables > Actions: add FUEL_FINDER_CLIENT_ID and
+# FUEL_FINDER_CLIENT_SECRET. Then Settings > Pages > Source: GitHub Actions.
+name: Fetch fuel data
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: fetch-fuel-data
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Fetch and merge
+        env:
+          FUEL_FINDER_CLIENT_ID: ${{ secrets.FUEL_FINDER_CLIENT_ID }}
+          FUEL_FINDER_CLIENT_SECRET: ${{ secrets.FUEL_FINDER_CLIENT_SECRET }}
+        run: dart run tool/fetch_fuel_data.dart
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - uses: actions/deploy-pages@v4
