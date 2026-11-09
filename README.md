@@ -24,18 +24,23 @@ Built with Flutter 3.47 and Riverpod 3.
 ## Architecture
 
 ```
-Fuel Finder API ──(OAuth client credentials, rate-limited, paged)──┐
-                                                                   │  GitHub Action, every 30 min
-                                                     tool/fetch_fuel_data.dart
-                                                                   │  merges stations + prices
-                                                     GitHub Pages: stations.json
-                                                                   │  one GET
-                                                            Flutter app
+Fuel Finder API ──(OAuth client credentials, rate-limited, paged, UK traffic only)──┐
+                                                                                   │  every 30 min, UK machine
+                                                             tool/fetch_fuel_data.dart
+                                                                                   │  merges stations + prices,
+                                                                                   │  keeps only fields the app uses
+                                                    gh-pages branch → GitHub Pages: stations.json (~1.2 MB gzipped)
+                                                                                   │  one GET
+                                                                            Flutter app
 ```
 
 The API needs a client secret and allows about one request every 2 seconds, so phones can't call it directly.
-A scheduled job fetches it with the secret held in GitHub, and the app downloads a single static file.
-No server to run, and no secret in the app.
+A scheduled job fetches it with the secret held outside the app, and the app downloads a single static file.
+
+The API's CloudFront edge rejects non-UK traffic (403 from GitHub's US-hosted Actions runners), so the job runs
+on a UK machine: `tool/publish_from_pc.ps1` via Windows Task Scheduler. It force-pushes a single-commit
+`gh-pages` branch so the repo history doesn't grow. A UK-region cloud function (e.g. AWS Lambda in eu-west-2)
+is the next step for running it without a PC.
 
 App code follows a feature-first controller / state / view layout:
 
@@ -67,23 +72,27 @@ flutter run            # Android / iOS
 flutter run -d chrome  # web
 ```
 
-Out of the box the app uses **bundled sample data** (fictional stations around London, clearly labelled in the app).
+The app reads live prices from `https://noyon04.github.io/PumpSaver/stations.json`.
+To use the **bundled sample data** instead (fictional stations around London, clearly labelled in the app):
 
-## Use live data
+```bash
+flutter run --dart-define=PRODUCTION_MODE=false
+```
+
+To read a local copy (e.g. a phone over USB with `adb reverse tcp:8766 tcp:8766`):
+
+```bash
+flutter run --dart-define=LIVE_URL=http://localhost:8766/
+```
+
+## Publishing live data
 
 1. Get API credentials: sign in with GOV.UK One Login at the
    [Fuel Finder developer portal](https://www.developer.fuel-finder.service.gov.uk/access-latest-fuelprices).
-2. Push this repo to GitHub. Add `FUEL_FINDER_CLIENT_ID` and `FUEL_FINDER_CLIENT_SECRET` as Actions secrets,
-   and set Settings > Pages > Source to **GitHub Actions**.
-3. Run the **Fetch fuel data** workflow once (Actions tab > Run workflow).
-4. In `lib/network/api.dart` set `LIVE` to `https://<your-user>.github.io/<repo>/` (already set for this repo), and in
-   `lib/services/app_mode.dart` set `PRODUCTION_MODE = true`.
-
-Test the fetch locally:
-
-```bash
-FUEL_FINDER_CLIENT_ID=... FUEL_FINDER_CLIENT_SECRET=... dart run tool/fetch_fuel_data.dart
-```
+2. On a UK Windows PC, save them as user environment variables (never in the repo):
+   `setx FUEL_FINDER_CLIENT_ID ...` and `setx FUEL_FINDER_CLIENT_SECRET ...`
+3. Run `tool/publish_from_pc.ps1` once, then set Settings > Pages > Source to **Deploy from a branch: gh-pages**.
+4. Schedule the script every 30 minutes with Task Scheduler. It logs to `F:\Android\tmp\pumpsaver_publish.log`.
 
 ## Tests
 
