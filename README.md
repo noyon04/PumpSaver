@@ -76,7 +76,7 @@ Out of the box the app uses **bundled sample data** (fictional stations around L
 2. Push this repo to GitHub. Add `FUEL_FINDER_CLIENT_ID` and `FUEL_FINDER_CLIENT_SECRET` as Actions secrets,
    and set Settings > Pages > Source to **GitHub Actions**.
 3. Run the **Fetch fuel data** workflow once (Actions tab > Run workflow).
-4. In `lib/network/api.dart` set `LIVE` to `https://<your-user>.github.io/<repo>/`, and in
+4. In `lib/network/api.dart` set `LIVE` to `https://<your-user>.github.io/<repo>/` (already set for this repo), and in
    `lib/services/app_mode.dart` set `PRODUCTION_MODE = true`.
 
 Test the fetch locally:
