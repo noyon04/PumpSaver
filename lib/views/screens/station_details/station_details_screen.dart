@@ -37,8 +37,8 @@ class StationDetailsScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         children: [
           Text(station.displayName, style: KTextStyle.headline5.copyWith(color: KColor.title)),
-          if (station.brandName != null && station.brandName != station.displayName)
-            Text(station.brandName!, style: KTextStyle.bodyText2.copyWith(color: KColor.caption)),
+          if (station.displayBrand != null && station.displayBrand != station.displayName)
+            Text(station.displayBrand!, style: KTextStyle.bodyText2.copyWith(color: KColor.caption)),
           const SizedBox(height: 4),
           Text(station.address, style: KTextStyle.bodyText1.copyWith(color: KColor.body)),
           if (station.isMotorway || station.isSupermarket) ...[

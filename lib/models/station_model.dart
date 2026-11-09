@@ -1,3 +1,5 @@
+import 'package:pump_saver/services/recase_service.dart';
+
 /// A forecourt from the Fuel Finder API (PFS info merged with its fuel_prices).
 class StationModel {
   StationModel({
@@ -37,13 +39,21 @@ class StationModel {
   final List<FuelPriceModel> fuelPrices;
 
   /// Trading name tells same-brand stations apart ("Tesco Camden" vs "Tesco Brixton").
-  String get displayName => tradingName ?? brandName ?? 'Unknown station';
+  /// The API sends most names in capitals, so they're title-cased for display.
+  String get displayName => RecaseService.titleCaseIfShouting(tradingName ?? brandName ?? 'Unknown station');
 
-  String get address => [addressLine1, addressLine2, city, postcode].where((s) => s != null && s.isNotEmpty).join(', ');
+  String? get displayBrand => brandName == null ? null : RecaseService.titleCaseIfShouting(brandName!);
+
+  /// Postcode keeps its capitals.
+  String get address => [
+        ...[addressLine1, addressLine2, city].where((s) => s != null && s.isNotEmpty).map((s) => RecaseService.titleCaseIfShouting(s!)),
+        if (postcode != null && postcode!.isNotEmpty) postcode!,
+      ].join(', ');
 
   FuelPriceModel? priceFor(String fuelCode) {
+    final code = fuelCode.toUpperCase();
     for (final p in fuelPrices) {
-      if (p.fuelType == fuelCode) return p;
+      if (p.fuelType == code) return p;
     }
     return null;
   }
@@ -82,7 +92,7 @@ class FuelPriceModel {
   final DateTime? lastUpdated;
 
   factory FuelPriceModel.fromJson(Map<String, dynamic> json) => FuelPriceModel(
-        fuelType: json['fuel_type'] as String,
+        fuelType: (json['fuel_type'] as String).toUpperCase(),
         price: (json['price'] as num).toDouble(),
         lastUpdated: DateTime.tryParse(json['price_last_updated'] as String? ?? ''),
       );
@@ -95,7 +105,10 @@ class OpeningHoursModel {
   final String? close;
   final bool is24Hours;
 
-  String get label => is24Hours ? 'Open 24 hours' : '${open ?? '?'} – ${close ?? '?'}';
+  String get label => is24Hours ? 'Open 24 hours' : '${_hhmm(open)} – ${_hhmm(close)}';
+
+  /// The API sends "06:00:00"; show "06:00".
+  static String _hhmm(String? time) => time == null ? '?' : (time.length > 5 ? time.substring(0, 5) : time);
 
   factory OpeningHoursModel.fromJson(Map<String, dynamic> json) => OpeningHoursModel(
         open: json['open'] as String?,

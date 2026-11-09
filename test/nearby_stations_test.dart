@@ -39,7 +39,8 @@ void main() {
     expect(result.map((n) => n.station.nodeId), ['near-expensive', 'far-cheap']);
   });
 
-  test('diesel uses the B7_Standard price', () {
+  // The fixture uses the docs' 'B7_Standard'; the live API sends 'B7_STANDARD'. Both must match.
+  test('diesel matches B7 standard in any case', () {
     final result = findNearbyStations(stations, lat, lng, const SearchFilterState(fuelType: FuelType.diesel));
     expect(result.map((n) => n.price.price), [150.9, 155.9]);
   });
@@ -59,6 +60,26 @@ void main() {
     });
     expect(s.displayName, 'Tesco Camden');
   });
+
+  test('live API capitals are tidied for display, postcode kept', () {
+    final s = StationModel.fromJson({
+      'node_id': 'x', 'brand_name': 'BP', 'trading_name': 'MFG PONTYPOOL SUPERSTORE',
+      'location': {'address_line_1': 'LOWER BRIDGE STREET', 'city': 'PONTYPOOL', 'postcode': 'NP4 6JU', 'latitude': 51.7, 'longitude': -3.0},
+      'opening_times': {'usual_days': {'monday': {'open': '06:00:00', 'close': '22:00:00', 'is_24_hours': false}}},
+    });
+    expect(s.displayName, 'MFG Pontypool Superstore');
+    expect(s.displayBrand, 'BP');
+    expect(s.address, 'Lower Bridge Street, Pontypool, NP4 6JU');
+    expect(s.openingTimes['monday']!.label, '06:00 – 22:00');
+  });
+
+  test('real Fuel Finder data parses and finds diesel in London', () {
+    final file = File('public/stations.json');
+    final parsed = (json.decode(file.readAsStringSync()) as List).map((x) => StationModel.fromJson(x as Map<String, dynamic>)).toList();
+    final diesel = findNearbyStations(parsed, lat, lng, const SearchFilterState(fuelType: FuelType.diesel));
+    expect(parsed.length, greaterThan(5000));
+    expect(diesel, isNotEmpty);
+  }, skip: File('public/stations.json').existsSync() ? false : 'run tool/fetch_fuel_data.dart first');
 
   test('timeAgo', () {
     final now = DateTime.utc(2026, 11, 5, 12);
