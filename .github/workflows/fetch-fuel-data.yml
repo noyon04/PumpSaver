@@ -9,6 +9,12 @@ on:
   schedule:
     - cron: '*/30 * * * *'
   workflow_dispatch:
+  # Test changes to the fetcher straight away.
+  push:
+    branches: [main]
+    paths:
+      - tool/fetch_fuel_data.dart
+      - .github/workflows/fetch-fuel-data.yml
 
 permissions:
   contents: read

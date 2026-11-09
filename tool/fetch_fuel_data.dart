@@ -24,6 +24,17 @@ Future<void> main() async {
     exit(64);
   }
 
+  try {
+    await fetchAndWrite(clientId, clientSecret);
+  } catch (error) {
+    // An ::error:: line becomes a GitHub annotation, readable without access to the run logs.
+    final message = '$error'.replaceAll('\r', '').replaceAll('\n', '%0A');
+    stdout.writeln('::error title=Fuel Finder fetch failed::${message.length > 1500 ? message.substring(0, 1500) : message}');
+    exit(1);
+  }
+}
+
+Future<void> fetchAndWrite(String clientId, String clientSecret) async {
   final token = await fetchToken(clientId, clientSecret);
   final stations = await fetchAllBatches('/api/v1/pfs', token);
   final prices = await fetchAllBatches('/api/v1/pfs/fuel-prices', token);
