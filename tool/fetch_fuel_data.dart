@@ -3,7 +3,8 @@
 //
 // Run: dart run tool/fetch_fuel_data.dart
 // Needs FUEL_FINDER_CLIENT_ID and FUEL_FINDER_CLIENT_SECRET (from the Fuel Finder developer portal).
-// Runs on a schedule in .github/workflows/fetch-fuel-data.yml, never in the app.
+// The API only accepts UK traffic, so this runs on a UK machine via tool/publish_from_pc.ps1, never in the app.
+// Errors are printed as GitHub ::error:: annotations, so it also reports cleanly if moved to CI with a UK runner.
 
 import 'dart:convert';
 import 'dart:io';
