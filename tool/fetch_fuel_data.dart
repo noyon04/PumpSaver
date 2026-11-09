@@ -39,10 +39,11 @@ Future<void> fetchAndWrite(String clientId, String clientSecret) async {
   final stations = await fetchAllBatches('/api/v1/pfs', token);
   final prices = await fetchAllBatches('/api/v1/pfs/fuel-prices', token);
 
-  final pricesById = {for (final p in prices) p['node_id']: p['fuel_prices'] ?? []};
+  final pricesById = {for (final p in prices) p['node_id']: (p['fuel_prices'] as List?) ?? const []};
   final merged = [
     for (final s in stations)
-      if ((s['location'] as Map?)?['latitude'] != null) {...s, 'fuel_prices': pricesById[s['node_id']] ?? []},
+      if ((s['location'] as Map?)?['latitude'] != null && s['permanent_closure'] != true && (pricesById[s['node_id']]?.isNotEmpty ?? false))
+        slim(s, pricesById[s['node_id']]!),
   ];
 
   final out = File('public/stations.json')..createSync(recursive: true);
@@ -60,6 +61,25 @@ Future<String> fetchToken(String clientId, String clientSecret) async {
   final body = jsonDecode(response.body) as Map<String, dynamic>;
   final data = (body['data'] as Map<String, dynamic>?) ?? body;
   return data['access_token'] as String;
+}
+
+/// Only the fields the app reads, so phones download about a third of the raw size.
+Map<String, dynamic> slim(Map<String, dynamic> s, List prices) {
+  final location = s['location'] as Map;
+  return {
+    'node_id': s['node_id'],
+    'trading_name': s['trading_name'],
+    'brand_name': s['brand_name'],
+    'is_motorway_service_station': s['is_motorway_service_station'],
+    'is_supermarket_service_station': s['is_supermarket_service_station'],
+    'temporary_closure': s['temporary_closure'],
+    'location': {for (final k in ['address_line_1', 'address_line_2', 'city', 'postcode', 'latitude', 'longitude']) k: location[k]},
+    'amenities': s['amenities'],
+    'opening_times': {'usual_days': (s['opening_times'] as Map?)?['usual_days']},
+    'fuel_prices': [
+      for (final p in prices) {'fuel_type': p['fuel_type'], 'price': p['price'], 'price_last_updated': p['price_last_updated']},
+    ],
+  };
 }
 
 /// Status, body and the headers that show which server or firewall answered.
