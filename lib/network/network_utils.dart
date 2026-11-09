@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -9,13 +10,19 @@ import 'package:pump_saver/views/styles/k_colors.dart';
 class Network {
   static String noInternetMessage = 'Check your connection!';
 
+  /// Tries the request rather than pre-checking connectivity, which gives false
+  /// "offline" answers (VPNs, USB test servers). Any network failure becomes noInternetMessage.
   static Future<Response> getRequest(String endPoint, {bool noBaseUrl = false}) async {
-    if (!await isNetworkAvailable()) throw noInternetMessage;
-
     final url = noBaseUrl ? endPoint : '${API.LIVE}$endPoint';
     if (kDebugMode) debugPrint('\nURL: $url');
 
-    return get(Uri.parse(url), headers: {'Accept': 'application/json'}).timeout(const Duration(seconds: 20));
+    try {
+      return await get(Uri.parse(url), headers: {'Accept': 'application/json'}).timeout(const Duration(seconds: 20));
+    } on TimeoutException {
+      throw noInternetMessage;
+    } on ClientException {
+      throw noInternetMessage;
+    }
   }
 
   /// Returns the decoded body on success, or null after showing a toast.

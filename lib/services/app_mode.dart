@@ -2,5 +2,6 @@
 
 class AppMode {
   /// false = bundled sample data, true = live data from API.LIVE.
-  static const PRODUCTION_MODE = false;
+  /// Override per build: flutter run --dart-define=PRODUCTION_MODE=true
+  static const PRODUCTION_MODE = bool.fromEnvironment('PRODUCTION_MODE');
 }
