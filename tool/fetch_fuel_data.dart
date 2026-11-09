@@ -56,10 +56,17 @@ Future<String> fetchToken(String clientId, String clientSecret) async {
     headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
     body: jsonEncode({'client_id': clientId, 'client_secret': clientSecret}),
   );
-  if (response.statusCode != 200) throw 'Token request failed: ${response.statusCode} ${response.body}';
+  if (response.statusCode != 200) throw 'Token request failed: ${describe(response)}';
   final body = jsonDecode(response.body) as Map<String, dynamic>;
   final data = (body['data'] as Map<String, dynamic>?) ?? body;
   return data['access_token'] as String;
+}
+
+/// Status, body and the headers that show which server or firewall answered.
+String describe(http.Response response) {
+  const keep = ['server', 'via', 'x-cache', 'x-amz-cf-pop', 'x-amzn-waf-action', 'cf-ray', 'x-azure-ref', 'content-type'];
+  final headers = {for (final k in keep) if (response.headers[k] != null) k: response.headers[k]};
+  return '${response.statusCode} headers=$headers body=${response.body}';
 }
 
 /// Pages through `batch-number` until an empty batch or a 404.
@@ -68,7 +75,7 @@ Future<List<Map<String, dynamic>>> fetchAllBatches(String path, String token) as
   for (var batch = 1; batch <= maxBatches; batch++) {
     final response = await getWithRetry(Uri.parse('$base$path?batch-number=$batch'), token);
     if (response.statusCode == 404 && batch > 1) break;
-    if (response.statusCode != 200) throw 'GET $path batch $batch failed: ${response.statusCode} ${response.body}';
+    if (response.statusCode != 200) throw 'GET $path batch $batch failed: ${describe(response)}';
 
     final records = extractRecords(jsonDecode(response.body));
     if (records.isEmpty) break;
