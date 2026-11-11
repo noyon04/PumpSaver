@@ -20,6 +20,8 @@ Built with Flutter 3.47 and Riverpod 3.
 - Station details: every fuel price, opening hours, facilities, one-tap directions
 - Remembers your fuel type and sort order
 - Works without location permission (falls back to central London and says so)
+- Works offline: keeps the last downloaded prices on the device and says how old they are
+- No accounts, adverts or analytics ([privacy policy](https://noyon04.github.io/PumpSaver/privacy.html))
 
 ## Architecture
 
@@ -93,6 +95,30 @@ flutter run --dart-define=LIVE_URL=http://localhost:8766/
    `setx FUEL_FINDER_CLIENT_ID ...` and `setx FUEL_FINDER_CLIENT_SECRET ...`
 3. Run `tool/publish_from_pc.ps1` once, then set Settings > Pages > Source to **Deploy from a branch: gh-pages**.
 4. Schedule the script every 30 minutes with Task Scheduler. It logs to `F:\Android\tmp\pumpsaver_publish.log`.
+
+## Release build
+
+Create an upload key once (keep the file and passwords safe; neither goes in git):
+
+```bash
+keytool -genkey -v -keystore F:\Android\pumpsaver-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
+
+Then create `android/key.properties`:
+
+```
+storeFile=F:/Android/pumpsaver-upload.jks
+storePassword=...
+keyAlias=upload
+keyPassword=...
+```
+
+```bash
+flutter build appbundle --release
+```
+
+Without `key.properties`, release builds are signed with the debug key (fine for testing, rejected by Play).
+The launcher icon is generated from `assets/icon/` with `dart run flutter_launcher_icons`.
 
 ## Tests
 
