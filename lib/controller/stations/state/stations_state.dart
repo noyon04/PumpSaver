@@ -14,7 +14,10 @@ final class StationsLoadingState extends StationsState {
 
 final class StationsSuccessState extends StationsState {
   final List<StationModel> stations;
-  const StationsSuccessState(this.stations);
+
+  /// Set when the download failed and these are prices saved on the device earlier.
+  final DateTime? savedAt;
+  const StationsSuccessState(this.stations, {this.savedAt});
 }
 
 final class StationsErrorState extends StationsState {

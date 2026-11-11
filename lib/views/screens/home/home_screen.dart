@@ -9,9 +9,11 @@ import 'package:pump_saver/controller/stations/nearby_stations_controller.dart';
 import 'package:pump_saver/controller/stations/state/stations_state.dart';
 import 'package:pump_saver/controller/stations/stations_controller.dart';
 import 'package:pump_saver/services/app_mode.dart';
+import 'package:pump_saver/services/date_time_service.dart';
 import 'package:pump_saver/views/global_components/k_content_unavailable_component.dart';
 import 'package:pump_saver/views/global_components/k_info_banner.dart';
 import 'package:pump_saver/views/global_components/loading_indicators/k_loading_indicator.dart';
+import 'package:pump_saver/views/screens/home/component/data_credit_footer.dart';
 import 'package:pump_saver/views/screens/home/component/fuel_type_selector.dart';
 import 'package:pump_saver/views/screens/home/component/station_card.dart';
 import 'package:pump_saver/views/styles/b_style.dart';
@@ -47,6 +49,8 @@ class HomeScreen extends ConsumerWidget {
             if (!AppMode.PRODUCTION_MODE) const KInfoBanner(icon: Icons.science_outlined, text: 'Sample data: these are not real stations or prices.'),
             if (locationState is LocationSuccessState && locationState.fallbackReason != null)
               KInfoBanner(icon: Icons.location_off_outlined, text: locationState.fallbackReason!),
+            if (stationsState is StationsSuccessState && stationsState.savedAt != null)
+              KInfoBanner(icon: Icons.cloud_off_outlined, text: 'Offline: showing prices saved ${DateTimeService.timeAgo(stationsState.savedAt)}.'),
             const SizedBox(height: 4),
             const FuelTypeSelector(),
             const SizedBox(height: 12),
@@ -88,6 +92,8 @@ class HomeScreen extends ConsumerWidget {
               )
             else
               ...nearby.map((n) => StationCard(nearbyStation: n, isCheapest: n.price.price == cheapest)),
+            const SizedBox(height: 12),
+            const DataCreditFooter(),
           ],
         ),
       ),

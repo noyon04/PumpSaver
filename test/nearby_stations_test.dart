@@ -7,6 +7,7 @@ import 'package:pump_saver/controller/stations/nearby_stations_controller.dart';
 import 'package:pump_saver/models/fuel_type.dart';
 import 'package:pump_saver/models/station_model.dart';
 import 'package:pump_saver/services/date_time_service.dart';
+import 'package:pump_saver/services/recase_service.dart';
 
 StationModel station(String id, double lat, double lng, Map<String, double> prices, {bool closed = false}) => StationModel.fromJson({
       'node_id': id,
@@ -68,6 +69,8 @@ void main() {
       'opening_times': {'usual_days': {'monday': {'open': '06:00:00', 'close': '22:00:00', 'is_24_hours': false}}},
     });
     expect(s.displayName, 'MFG Pontypool Superstore');
+    expect(RecaseService.titleCaseIfShouting('craven park station'), 'Craven Park Station');
+    expect(RecaseService.titleCaseIfShouting('Boundary Service station Gulf'), 'Boundary Service station Gulf');
     expect(s.displayBrand, 'BP');
     expect(s.address, 'Lower Bridge Street, Pontypool, NP4 6JU');
     expect(s.openingTimes['monday']!.label, '06:00 – 22:00');

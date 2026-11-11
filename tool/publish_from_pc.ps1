@@ -32,6 +32,7 @@ try {
     if (Test-Path $publishDir) { Remove-Item $publishDir -Recurse -Force }
     New-Item -ItemType Directory -Path $publishDir | Out-Null
     Copy-Item "$repo\public\stations.json" $publishDir
+    Copy-Item "$repo\docs\privacy.html" $publishDir
     New-Item -ItemType File -Path "$publishDir\.nojekyll" | Out-Null
 
     git -C $publishDir init -q -b gh-pages
